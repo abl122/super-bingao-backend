@@ -15,7 +15,11 @@ class Database {
   }
 
   init() {
-    this.connection = new Sequelize(databaseConfig);
+    try {
+      this.connection = new Sequelize(databaseConfig);
+    } catch (error) {
+      console.log(error);
+    }
 
     models.map(model => model.init(this.connection));
   }
