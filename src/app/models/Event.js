@@ -11,6 +11,7 @@ class Event extends Model {
         event_beginning: Sequelize.STRING,
         is_active: Sequelize.BOOLEAN,
         card_price: Sequelize.FLOAT,
+        comission: Sequelize.FLOAT,
       },
       {
         sequelize,
