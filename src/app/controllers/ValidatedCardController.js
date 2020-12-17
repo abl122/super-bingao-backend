@@ -4,11 +4,19 @@ import Card from '../models/Card';
 
 class ValidatedCardController {
   async store(req, res) {
+    const { event_id } = req.query;
+
+    const event = await Event.findByPk(event_id);
+
+    if (!event) {
+      return res.status(400).json({ message: 'No events found' });
+    }
 
     // Verifica se a pedido já foi validada
     const isValidated = await Validated.findAll({
       where: {
         pedido: req.body.order_number,
+        edition: event.edition,
       },
     });
 
@@ -20,14 +28,14 @@ class ValidatedCardController {
     // Verifica se já foram vendidas cartelas para este evento
     const validated_count = await Validated.count({
       where: {
-        edition: req.query.edition,
+        edition: event.edition,
       }
     });
 
     // Recupera a cartela inicial de lançamento
     const { initial_card, initial_lot } = await Event.findOne({
       where: {
-        edition: req.query.edition
+        edition: event.edition
       },
     });
 
@@ -53,7 +61,7 @@ class ValidatedCardController {
       response_array.push({
         lote: current_lot,
         lancamento: current_lan + i,
-        edition: req.query.edition,
+        edition: event.edition,
         ...card.dataValues,
         pedido: req.body.order_number,
         comprador: req.body.buyer_name,
@@ -64,7 +72,7 @@ class ValidatedCardController {
       await Validated.create({
         lote: current_lot,
         lancamento: current_lan + i,
-        edition: req.query.edition,
+        edition: event.edition,
         ...card.dataValues,
         pedido: req.body.order_number,
         comprador: req.body.buyer_name,
@@ -74,6 +82,30 @@ class ValidatedCardController {
     }
 
     return res.json(response_array);
+  }
+
+  async show(req, res) {
+    const { event_id, order_number } = req.query;
+
+    const event = await Event.findByPk(event_id);
+
+    if (!event) {
+      return res.status(400).json({ message: 'No events found' });
+    }
+
+    const validateds = await Validated.findAll({
+      where: {
+        edition: event.edition,
+        pedido: order_number,
+      },
+    });
+
+    validateds.map((card, index) => {
+      const [, paroquia] = event.name.split('- ');
+      validateds[index].dataValues['paroquia'] = paroquia;
+    });
+
+    return res.json(validateds);
   }
 }
 
