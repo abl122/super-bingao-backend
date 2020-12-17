@@ -1,14 +1,20 @@
 import Validated from '../models/Validated';
+import Event from '../models/Event';
 
 class OrderController {
   async index(req, res) {
-    const { edition } = req.query;
+    const { event_id } = req.query;
+
+    const event = await Event.findByPk(event_id);
+
+    if (!event) {
+      return res.status(400).json({ message: 'No events found' });
+    }
 
     const orders = await Validated.findAll({
       where: {
-        edition: edition,
+        edition: event.edition,
       },
-      order: [['created_at', 'DESC']],
     });
 
     // Armazena todos os números de pedidos em um array
