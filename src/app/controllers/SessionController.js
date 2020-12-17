@@ -31,7 +31,7 @@ class SessionController {
         name,
         event_id,
       },
-      token: jwt.sign({ id }, '4d8d66bfdfc5db478c45662f98eb685c', {
+      token: jwt.sign({ id }, authConfig.secret, {
         expiresIn: authConfig.expiresIn,
       }),
     });
