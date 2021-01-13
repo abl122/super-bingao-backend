@@ -2,6 +2,16 @@ import Event from '../models/Event';
 import Validated from '../models/Validated';
 
 class EventController {
+  async index(req, res) {
+    const events = await Event.findAll();
+
+    if (!events) {
+      return res.json([]);
+    }
+
+    return res.json(events);
+  }
+
   async store(req, res) {
     const {
       edition,
