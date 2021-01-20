@@ -4,10 +4,11 @@ import User from '../app/models/User';
 import Event from '../app/models/Event';
 import Card from '../app/models/Card';
 import Validated from '../app/models/Validated';
+import Order from '../app/models/Order';
 
 import databaseConfig from '../config/database';
 
-const models = [User, Event, Card, Validated];
+const models = [User, Event, Card, Validated, Order];
 
 class Database {
   constructor() {
