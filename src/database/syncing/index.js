@@ -1,4 +1,5 @@
 import axios from 'axios';
+import schedule from 'node-schedule';
 
 import Order from '../../app/models/Order';
 import Validated from '../../app/models/Validated';
@@ -8,10 +9,56 @@ import Event from '../../app/models/Event';
 class SyncingDatabase {
   constructor() {
     this.init();
+    this.checkForDatabaseUpdates();
+  }
+
+  async validateCard(sku, quantidade, numero_pedido, nome, razao_social, telefone_celular, telefone_principal) {
+    // Verifica se já foram vendidas cartelas para este evento
+    const validated_count = await Validated.count({
+      where: {
+        edition: sku,
+      }
+    });
+
+    // Recupera a cartela inicial de lançamento
+    const { initial_card, initial_lot } = await Event.findOne({
+      where: {
+        edition: sku,
+      },
+    });
+
+    const current_card = initial_card + validated_count;
+
+    for (let i = 0; i < quantidade; i++) {
+      const card = await Card.findOne({
+        where: {
+          numero: current_card + i,
+        },
+        attributes: ['numero', 'digito', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'codigo'],
+      });
+
+      const updated_count = validated_count + i;
+
+      const current_lot = Math.floor(updated_count / 100) + initial_lot;
+      const current_lan = updated_count >= 100
+        ? (validated_count - Math.floor(updated_count / 100) * 100) + 1
+        : validated_count + 1;
+
+      await Validated.create({
+        lote: current_lot,
+        lancamento: current_lan + i,
+        edition: sku,
+        ...card.dataValues,
+        pedido: numero_pedido,
+        comprador: nome !== null ? nome : razao_social,
+        telefone: telefone_celular !== null ? telefone_celular : telefone_principal,
+        vendedor: 'Lojinha Paroquial',
+      });
+    }
   }
 
   init() {
-    setInterval(async function () {
+    setInterval(async () => {
       const chave_aplicacao = 'bac71631-6746-4fec-a391-79426b0568d5';
       const chave_api = 'fdef8cea32652c3484c7';
 
@@ -78,49 +125,7 @@ class SyncingDatabase {
 
             const isApproved = 4;
             if (new_row.id_situacao === isApproved) {
-
-              // Verifica se já foram vendidas cartelas para este evento
-              const validated_count = await Validated.count({
-                where: {
-                  edition: new_row.sku,
-                }
-              });
-
-              // Recupera a cartela inicial de lançamento
-              const { initial_card, initial_lot } = await Event.findOne({
-                where: {
-                  edition: new_row.sku,
-                },
-              });
-
-              const current_card = initial_card + validated_count;
-
-              for (let i = 0; i < new_row.quantidade; i++) {
-                const card = await Card.findOne({
-                  where: {
-                    numero: current_card + i,
-                  },
-                  attributes: ['numero', 'digito', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'codigo'],
-                });
-
-                const updated_count = validated_count + i;
-
-                const current_lot = Math.floor(updated_count / 100) + initial_lot;
-                const current_lan = updated_count >= 100
-                  ? (validated_count - Math.floor(updated_count / 100) * 100) + 1
-                  : validated_count + 1;
-
-                await Validated.create({
-                  lote: current_lot,
-                  lancamento: current_lan + i,
-                  edition: new_row.sku,
-                  ...card.dataValues,
-                  pedido: new_row.numero_pedido,
-                  comprador: new_row.nome !== null ? new_row.nome : new_row.razao_social,
-                  telefone: new_row.telefone_celular !== null ? new_row.telefone_celular : new_row.telefone_principal,
-                  vendedor: 'Lojinha Paroquial',
-                });
-              }
+              this.validateCard(new_row.sku, new_row.quantidade, new_row.numero_pedido, new_row.nome, new_row.razao_social, new_row.telefone_celular, new_row.telefone_principal);
             }
           };
         } catch (error) {
@@ -130,6 +135,35 @@ class SyncingDatabase {
 
       console.log('Finalizado');
     }, 180000);
+  }
+
+  checkForDatabaseUpdates() {
+    const chave_aplicacao = 'bac71631-6746-4fec-a391-79426b0568d5';
+    const chave_api = 'fdef8cea32652c3484c7';
+
+    const isPending = 2;
+
+    schedule.scheduleJob('0 48 13 * * *', async () => {
+      const orders = await Order.findAll({
+        where: {
+          id_situacao: isPending,
+        },
+      });
+
+      for (let i = 0; i <= orders.length - 1; i++) {
+        const order = await Order.findByPk(orders[i].dataValues.id);
+        const { data } = await axios.get(`https://api.awsli.com.br/v1/pedido/${order.numero_pedido}?chave_aplicacao=${chave_aplicacao}&chave_api=${chave_api}`);
+
+        const isApproved = 4
+        if (data.situacao.id === isApproved) {
+          order.id_situacao = isApproved;
+          order.situacao = 'Pedido Pago';
+          order.save();
+
+          this.validateCard(order.sku, order.quantidade, order.numero_pedido, order.nome, order.razao_social, order.telefone_celular, order.telefone_principal);
+        }
+      }
+    });
   }
 }
 
