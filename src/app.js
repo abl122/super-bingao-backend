@@ -4,6 +4,7 @@ import cors from 'cors';
 import routes from './routes';
 
 import './database';
+import './database/syncing/index';
 
 class App {
   constructor() {
