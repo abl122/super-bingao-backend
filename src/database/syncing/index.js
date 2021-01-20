@@ -143,7 +143,7 @@ class SyncingDatabase {
 
     const isPending = 2;
 
-    schedule.scheduleJob('0 48 13 * * *', async () => {
+    schedule.scheduleJob('0 0 7 * * *', async () => {
       const orders = await Order.findAll({
         where: {
           id_situacao: isPending,
