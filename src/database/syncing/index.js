@@ -1,5 +1,6 @@
 import axios from 'axios';
 import schedule from 'node-schedule';
+import { Op } from 'sequelize';
 
 import Order from '../../app/models/Order';
 import Validated from '../../app/models/Validated';
@@ -142,11 +143,14 @@ class SyncingDatabase {
     const chave_api = 'fdef8cea32652c3484c7';
 
     const isPending = 2;
+    const isOrderEffected = 9;
 
     schedule.scheduleJob('0 0 7 * * *', async () => {
       const orders = await Order.findAll({
         where: {
-          id_situacao: isPending,
+          id_situacao: {
+            [Op.or]: [isPending, isOrderEffected],
+          },
         },
       });
 
