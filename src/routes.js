@@ -15,11 +15,11 @@ const routes = new Router();
 
 routes.post('/session', SessionController.store);
 routes.post('/winner', WinnerController.show);
+routes.get('/events/all', EventController.index);
 
 routes.use(authMiddleware);
 routes.post('/users', UserController.store);
 
-routes.get('/events/all', EventController.index);
 routes.post('/event', EventController.store);
 routes.get('/events', EventController.show);
 
