@@ -27,6 +27,7 @@ routes.post('/validate', ValidatedCardController.store);
 routes.get('/validateds', ValidatedCardController.show);
 
 routes.get('/orders', OrderController.index);
+routes.put('/order', OrderController.update);
 
 routes.get('/search', SearchController.index);
 
