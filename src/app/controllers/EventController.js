@@ -57,6 +57,7 @@ class EventController {
 
     const response = await axios.get(`https://api.awsli.com.br/v1/produto?chave_aplicacao=${chave_aplicacao}&chave_api=${chave_api}`);
 
+    // Implementação para recuperação do produc_id e product_status
     var product_id = null;
     var product_status = null;
     response.data.objects.map(product => {
@@ -66,6 +67,7 @@ class EventController {
       }
     });
 
+    // Implementação para recuperação da primeira e da última cartela vendida
     const first_card = await Validated.findOne({
       where: {
         edition: event.edition,
