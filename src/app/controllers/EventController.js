@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 import Event from '../models/Event';
 import Validated from '../models/Validated';
 
@@ -50,9 +52,41 @@ class EventController {
       },
     });
 
+    const chave_aplicacao = 'bac71631-6746-4fec-a391-79426b0568d5';
+    const chave_api = 'fdef8cea32652c3484c7';
+
+    const response = await axios.get(`https://api.awsli.com.br/v1/produto?chave_aplicacao=${chave_aplicacao}&chave_api=${chave_api}`);
+
+    var product_id = null;
+    var product_status = null;
+    response.data.objects.map(product => {
+      if (product.sku === event.edition) {
+        product_id = product.id;
+        product_status = product.ativo;
+      }
+    });
+
+    const first_card = await Validated.findOne({
+      where: {
+        edition: event.edition,
+      },
+      order: [['createdAt', 'ASC']],
+    });
+
+    const last_card = await Validated.findOne({
+      where: {
+        edition: event.edition,
+      },
+      order: [['createdAt', 'DESC']],
+    });
+
     return res.json({
       ...event.dataValues,
       selled_amount: selled_amount,
+      product_id,
+      product_status,
+      first_selled_card: first_card.dataValues.codigo,
+      last_selled_card: last_card.dataValues.codigo,
     });
   }
 }
