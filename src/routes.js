@@ -6,6 +6,7 @@ import OrderController from './app/controllers/OrderController';
 import WinnerController from './app/controllers/WinnerController';
 import SearchController from './app/controllers/SearchController';
 import SessionController from './app/controllers/SessionController';
+import ProductController from './app/controllers/ProductController';
 import ValidatedCardController from './app/controllers/ValidatedCardController';
 
 import authMiddleware from './app/middlewares/auth';
@@ -28,5 +29,7 @@ routes.get('/validateds', ValidatedCardController.show);
 routes.get('/orders', OrderController.index);
 
 routes.get('/search', SearchController.index);
+
+routes.post('/product', ProductController.update);
 
 export default routes;
