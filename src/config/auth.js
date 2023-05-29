@@ -1,4 +1,4 @@
 export default {
-  secret: 'superbingaoapp',
+  secret: '',
   expiresIn: '7d',
 };
